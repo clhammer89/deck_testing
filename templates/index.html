@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Card Management</title>
+    <style>
+      .card-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;  /* Center items horizontally */
+        align-items: center;      /* Center items vertically */
+      }  
+      .card {
+        display: inline-block;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        padding: 10px;
+        margin: 10px; /* Adjust margin for spacing between cards */
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+        background-color: #f9f9f9;
+        text-align: center;
+      }
+      .card img {
+        max-width: 200px;
+        max-height: 275px;
+        margin-bottom: 10px;
+      }
+      .card button {
+        border: none;
+        background: none;
+        cursor: pointer;
+        font-size: 1.2em;
+        margin: 0 5px;
+      }
+      .card-buttons {
+        margin-top: 10px;
+      }
+      .summary-cards {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 20px;
+      }
+      .summary-cards .card {
+        margin: 0 10px;
+      }
+      .tooltip {
+        position: relative;
+        display: inline-block;
+      }
+      .tooltip .tooltiptext {
+        visibility: hidden;
+        width: 120px;
+        background-color: #555;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 5px 0;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%; 
+        left: 50%;
+        margin-left: -60px;
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      .tooltip:hover .tooltiptext {
+        visibility: visible;
+        opacity: 1;
+      }
+    </style>
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        const deckList = document.getElementById('deckList');
+        const discardList = document.getElementById('discardList');
+        const inkList = document.getElementById('inkList');   
+
+        if (deckList) deckList.style.display = 'none';
+        if (discardList) discardList.style.display = 'none';
+        if (inkList) inkList.style.display = 'none';
+      });   
+
+      function updateVisibilityForm() {
+        const deckList = document.getElementById('deckList');
+        const handList = document.getElementById('handList');
+        const discardList = document.getElementById('discardList');
+        const inkList = document.getElementById('inkList');   
+
+        if (deckList) document.getElementById('deck_visible').value = deckList.style.display !== 'none';
+        if (handList) document.getElementById('hand_visible').value = handList.style.display !== 'none';
+        if (discardList) document.getElementById('discard_visible').value = discardList.style.display !== 'none';
+        if (inkList) document.getElementById('ink_visible').value = inkList.style.display !== 'none';
+      }   
+
+      function toggleListVisibility(listId, buttonId) {
+        const list = document.getElementById(listId);
+        const button = document.getElementById(buttonId);   
+
+        if (list && button) {
+          if (list.style.display === "none" || list.style.display === "") {
+            list.style.display = "block";
+            button.textContent = "Hide " + buttonId.replace("Button", "");
+          } else {
+            list.style.display = "none";
+            button.textContent = "Show " + buttonId.replace("Button", "");
+          }
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div style="text-align: center; margin-top: 50px;">
+      <div class="summary-cards">
+        <div class="card">Deck: {{ deck|length }} cards</div>
+        <div class="card">Hand: {{ hand|length }} cards</div>
+        <div class="card">Discard: {{ discard|length }} cards</div>
+        <div class="card">Ink: {{ ink|length }} cards</div>
+      </div>
+      <h1>Paste your deck (one card per line, use Copy Text output from lorcana.gg)</h1>
+      <div>
+        <form method="post" action="/add_to_deck" onsubmit="updateVisibilityForm()" style="display: inline;">
+          <textarea name="user_input" rows="10" cols="30" required></textarea>
+          <br><br>
+          <input type="hidden" name="deck_visible" id="deck_visible" value="true">
+          <input type="hidden" name="hand_visible" id="hand_visible" value="true">
+          <input type="hidden" name="discard_visible" id="discard_visible" value="true">
+          <input type="hidden" name="ink_visible" id="ink_visible" value="true">
+          <button type="submit">Submit</button>
+        </form>
+        <form method="post" action="/reset" onsubmit="updateVisibilityForm()" style="display: inline;">
+          <button type="submit">Reset</button>
+        </form>
+        <form method="post" action="/load_assets" onsubmit="updateVisibilityForm()" style="display: inline;">
+          <button type="submit">Load Assets</button>
+        </form>
+      </div>
+      <br>
+      <button id="deckButton" onclick="toggleListVisibility('deckList', 'deckButton')">Show Deck</button>
+      <button id="handButton" onclick="toggleListVisibility('handList', 'handButton')">Show Hand</button>
+      <button id="discardButton" onclick="toggleListVisibility('discardList', 'discardButton')">Show Discard</button>
+      <button id="inkButton" onclick="toggleListVisibility('inkList', 'inkButton')">Show Ink</button>
+      <br><br>
+      <div style="display: inline-block;">
+        <form method="post" action="/draw_card" onsubmit="updateVisibilityForm()" style="display: inline;">
+          <input type="hidden" name="deck_visible" id="deck_visible" value="true">
+          <input type="hidden" name="hand_visible" id="hand_visible" value="true">
+          <input type="hidden" name="discard_visible" id="discard_visible" value="true">
+          <input type="hidden" name="ink_visible" id="ink_visible" value="true">
+          <button type="submit">Draw</button>
+        </form>
+        <form method="post" action="/draw_seven_cards" onsubmit="updateVisibilityForm()" style="display: inline;">
+          <input type="hidden" name="deck_visible" id="deck_visible" value="true">
+          <input type="hidden" name="hand_visible" id="hand_visible" value="true">
+          <input type="hidden" name="discard_visible" id="discard_visible" value="true">
+          <input type="hidden" name="ink_visible" id="ink_visible" value="true">
+          <button type="submit">Draw 7</button>
+        </form>
+      </div>
+      <!-- Hand List -->
+      <div id="handList" style="margin-top: 20px;">
+        {% if hand %}
+          <h2>Your Hand ({{ hand|length }})</h2>
+          <div class="card-container">
+            {% for item in hand %}
+              <div class="card">
+                <div>
+                {{ item[0] }}
+                </div>
+                <img src="{{ url_for('static', filename='card_assets/' + item[2]) }}" alt="{{ item[0] }}" onerror="this.style.display='none'">
+                <div class="card-buttons">
+                  <span class="tooltip">
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/hand/deck/{{ loop.index0 }}'">&#x2B06;</button>
+                    <span class="tooltiptext">Add to top of deck</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/hand/deck/{{ loop.index0 }}'">&#x2B07;</button>
+                    <span class="tooltiptext">Add to bottom of deck</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/hand/discard/{{ loop.index0 }}'">&#x274C;</button>
+                    <span class="tooltiptext">Add to discard</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/hand/ink/{{ loop.index0 }}'">&#x1F58B;</button>
+                    <span class="tooltiptext">Add to ink</span>
+                  </span>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Discard List -->
+      <div id="discardList" style="margin-top: 20px;">
+        {% if discard %}
+          <h2>Your Discard Pile ({{ discard|length }})</h2>
+          <div class="card-container">
+            {% for item in discard %}
+              <div class="card">
+                <div>
+                {{ item[0] }}
+                </div>
+                <img src="{{ url_for('static', filename='card_assets/' + item[2]) }}" alt="{{ item[0] }}" onerror="this.style.display='none'">
+                <div class="card-buttons">
+                  <span class="tooltip">
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/discard/deck/{{ loop.index0 }}'">&#x2B06;</button>
+                    <span class="tooltiptext">Add to top of deck</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/discard/deck/{{ loop.index0 }}'">&#x2B07;</button>
+                    <span class="tooltiptext">Add to bottom of deck</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/discard/hand/{{ loop.index0 }}'">&#x1F91D;</button>
+                    <span class="tooltiptext">Add to hand</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/discard/ink/{{ loop.index0 }}'">&#x1F58B;</button>
+                    <span class="tooltiptext">Add to ink</span>
+                  </span>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Ink List -->
+      <div id="inkList" style="margin-top: 20px;">
+        {% if ink %}
+          <h2>Your Ink ({{ ink|length }})</h2>
+          <div class="card-container">
+            {% for item in ink %}
+              <div class="card">
+                <div>
+                {{ item[0] }}
+                </div>
+                <img src="{{ url_for('static', filename='card_assets/' + item[2]) }}" alt="{{ item[0] }}" onerror="this.style.display='none'">
+                <div class="card-buttons">
+                  <span class="tooltip">
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/ink/hand/{{ loop.index0 }}'">&#x1F91D;</button>
+                    <span class="tooltiptext">Add to hand</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/ink/deck/{{ loop.index0 }}'">&#x2B06;</button>
+                    <span class="tooltiptext">Add to top of deck</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/ink/discard/{{ loop.index0 }}'">&#x274C;</button>
+                    <span class="tooltiptext">Add to discard</span>
+                  </span>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+      <!-- Deck List -->
+      <div id="deckList" style="margin-top: 20px;">
+        {% if deck %}
+          <h2>Your Deck ({{ deck|length }})</h2>
+          <div class="card-container">
+            {% for item in deck %}
+              <div class="card">
+                <div>
+                {{ item[0] }}
+                </div>
+                <img src="{{ url_for('static', filename='card_assets/' + item[2]) }}" alt="{{ item[0] }}" onerror="this.style.display='none'">
+                <div class="card-buttons">
+                  <span class="tooltip">
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/deck/hand/{{ loop.index0 }}'">&#x1F91D;</button>
+                    <span class="tooltiptext">Add to hand</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/deck/discard/{{ loop.index0 }}'">&#x274C;</button>
+                    <span class="tooltiptext">Add to discard</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/deck/ink/{{ loop.index0 }}'">&#x1F58B;</button>
+                    <span class="tooltiptext">Add to ink</span>
+                  </span>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </body>
+</html>
