@@ -12,7 +12,7 @@ lore = 0
 #clear log on app start
 def clear_log_file():
     with open(log_file_path, 'w') as log_file:
-        log_file.write('')
+        log_file.write('App started. Paste your deck into the box above or select a deck from the dropdown.\n')
 clear_log_file()
 
 @deck_bp.route('/add_to_deck', methods=['POST'])
@@ -43,13 +43,13 @@ def add_to_deck():
             formatted_item = item.replace('-', '').replace('  ', ' ').replace(" ", "-").lower() + ".webp"
             deck.append((item, unique_numbers.pop(), formatted_item))
     deck.sort(key=lambda x: x[1])
-    log_text = "Deck submitted"
+    log_text = "Deck loaded. Click Load Assets to download card pictures and draw your hand."
     log_click(log_text)
     return redirect(url_for('main.home', board_visible=board_visible, deck_visible=deck_visible, hand_visible=hand_visible, discard_visible=discard_visible, ink_visible=ink_visible))
 
 @deck_bp.route('/reset', methods=['POST'])
 def reset():
-    global deck, hand, discard, ink, board, counter
+    global deck, hand, discard, ink, board, lore
     deck_visible = request.form.get('deck_visible') == 'false'
     hand_visible = request.form.get('hand_visible') == 'true'
     board_visible = request.form.get('board_visible') == 'true'
@@ -61,7 +61,37 @@ def reset():
     discard.clear()
     ink.clear()
     board.clear()
-    counter = 0
+    lore = 0
+    return redirect(url_for('main.home', board_visible=board_visible, deck_visible=deck_visible, hand_visible=hand_visible, discard_visible=discard_visible, ink_visible=ink_visible))
+
+@deck_bp.route('/reset_deck', methods=['POST'])
+def reset_deck():
+    global deck, hand, discard, ink, board, lore
+    deck_visible = request.form.get('deck_visible') == 'false'
+    hand_visible = request.form.get('hand_visible') == 'true'
+    board_visible = request.form.get('board_visible') == 'true'
+    discard_visible = request.form.get('discard_visible') == 'false'
+    ink_visible = request.form.get('ink_visible') == 'false'
+
+    # Move items to deck
+    deck.extend(hand)
+    deck.extend(board)
+    deck.extend(discard)
+    deck.extend(ink)
+
+    # Clear lists
+    hand.clear()
+    board.clear()
+    discard.clear()
+    ink.clear()
+
+    # Shuffle the deck
+    random.shuffle(deck)
+
+    # Reset lore
+    lore = 0
+    log_text = "All cards returned to deck and Lore set to 0"
+    log_click(log_text)
     return redirect(url_for('main.home', board_visible=board_visible, deck_visible=deck_visible, hand_visible=hand_visible, discard_visible=discard_visible, ink_visible=ink_visible))
 
 @deck_bp.route('/draw_card', methods=['POST'])
@@ -113,22 +143,27 @@ def move_item(from_list, to_list, index):
     
     # Handle moving to the deck with an assignment number
     if to_list == 'deck':
-        if request.form.get('add_to_top'):
+        add_to_top = request.args.get('add_to_top', default=False, type=bool)
+        add_to_bottom = request.args.get('add_to_bottom', default=False, type=bool)
+        if add_to_top:
             # Assign a number that is smaller than any current number in the deck (add to top)
+            log_text = f"{item[0]} moved from {from_list} to top of deck"
             new_assignment_number = min(deck, key=lambda x: x[1])[1] - 1 if deck else 0
-        elif request.form.get('add_to_bottom'):
+        elif add_to_bottom:
             # Assign a number that is larger than any current number in the deck (add to bottom)
+            log_text = f"{item[0]} moved from {from_list} to bottom of deck"
             new_assignment_number = max(deck, key=lambda x: x[1])[1] + 1 if deck else 0
         else:
             # Default behavior, just append with a new number (usually for other cases)
+            log_text = f"{item[0]} moved from {from_list} to {to_list}"
             new_assignment_number = max(deck, key=lambda x: x[1])[1] + 1 if deck else 0
         # Append to the deck with the new assignment number
         lists[to_list].append((item[0], new_assignment_number, item[2]))
     else:
         # For all other moves, just append to the destination list
+        log_text = f"{item[0]} moved from {from_list} to {to_list}"
         lists[to_list].append((item[0], 0, item[2]))  # You might want to adjust this as per your use case
 
-    log_text = f"{item[0]} moved from {from_list} to {to_list}"
     log_click(log_text)
 
     return redirect(url_for('main.home'))
@@ -181,7 +216,15 @@ def get_lore():
 def increment_lore():
     global lore
     lore += 1
-    log_text = "Lore incremented by 1, new total: {lore}"
+    log_text = f"Lore incremented by 1, new total: {lore}"
+    log_click(log_text)
+    return jsonify(lore=lore)
+
+@deck_bp.route('/decrement_lore', methods=['POST'])
+def decrement_lore():
+    global lore
+    lore -= 1
+    log_text = f"Lore decreased by 1, new total: {lore}"
     log_click(log_text)
     return jsonify(lore=lore)
 

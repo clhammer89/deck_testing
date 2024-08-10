@@ -12,19 +12,43 @@
         align-items: center;      /* Center items vertically */
       }  
       .card {
-        display: inline-block;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between; /* Space between content and buttons */
         border: 1px solid #ccc;
         border-radius: 5px;
+        width: 225px;
+        height: 375px;
         padding: 10px;
         margin: 10px; /* Adjust margin for spacing between cards */
         box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
         background-color: #f9f9f9;
         text-align: center;
+        overflow: hidden; /* Hide overflow text */
+        text-overflow: ellipsis; /* Add ellipsis (...) for overflowing text */
+        white-space: nowrap; /* Prevent text from wrapping to the next line */
+      }
+      .summary-card {
+        display: inline-block;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        width: 115px;
+        height: 20px;
+        padding: 10px;
+        margin: 10px; /* Adjust margin for spacing between cards */
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+        background-color: #f9f9f9;
+        text-align: center;
+        user-select: none; /* Standard for most modern browsers */
+        -webkit-user-select: none; /* Safari */
+        -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* IE10+ */
       }
       .card img {
-        max-width: 200px;
-        max-height: 275px;
+        max-width: 220px;
+        max-height: 300px;
         margin-bottom: 10px;
+        margin-top: 20px;
       }
       .card button {
         border: none;
@@ -34,14 +58,17 @@
         margin: 0 5px;
       }
       .card-buttons {
-        margin-top: 10px;
+        margin-top: auto; /* Push the buttons to the bottom */
+        display: flex;
+        justify-content: center;
+        gap: 5px; /* Space between buttons */
       }
       .summary-cards {
         display: flex;
         justify-content: center;
         margin-bottom: 20px;
       }
-      .summary-cards .card {
+      .summary-cards .summary-card {
         margin: 0 10px;
       }
       .tooltip {
@@ -185,23 +212,50 @@
     </script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
+            const loreButton = document.getElementById('loreButton');   
+
             // Load initial counter value from the server
             fetch('/get_lore')
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('loreButton').textContent = `Lore (${data.lore})`;
-                });
+                    loreButton.textContent = `Lore (${data.lore})`;
+                });   
 
-            // Add event listener for the button
-            document.getElementById('loreButton').addEventListener('click', function() {
+            // Left-click: increment lore count
+            loreButton.addEventListener('click', function() {
                 fetch('/increment_lore', { method: 'POST' })
                     .then(response => response.json())
                     .then(data => {
                         this.textContent = `Lore (${data.lore})`;
                         updateLog();
                     });
+            });   
+
+            // Right-click: decrement lore count and prevent context menu
+            loreButton.addEventListener('contextmenu', function(event) {
+                event.preventDefault(); // Prevent the context menu from appearing    
+
+                fetch('/decrement_lore', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        this.textContent = `Lore (${data.lore})`;
+                        updateLog();
+                    });
             });
-        });
+        });   
+
+        function updateLog() {
+            fetch('/get_log')
+                .then(response => response.json())
+                .then(data => {
+                    const logTextArea = document.getElementById('logTextArea');
+                    logTextArea.value = data.log;   
+
+                    // Move the cursor to the end
+                    logTextArea.scrollTop = logTextArea.scrollHeight;
+                    logTextArea.setSelectionRange(logTextArea.value.length, logTextArea.value.length);
+                });
+        }
     </script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
@@ -241,17 +295,20 @@
   <body>
     <div style="text-align: center; margin-top: 50px;">
       <div class="summary-cards">
-        <div class="card">Deck: {{ deck|length }} cards</div>
-        <div class="card">Hand: {{ hand|length }} cards</div>
-        <div class="card">Board: {{ board|length }} cards</div>
-        <div class="card">Discard: {{ discard|length }} cards</div>
-        <div class="card">Ink: {{ ink|length }} cards</div>
-        <button id="loreButton">Lore (0)</button>
+        <div class="summary-card">Deck: {{ deck|length }} cards</div>
+        <div class="summary-card">Hand: {{ hand|length }} cards</div>
+        <div class="summary-card">Board: {{ board|length }} cards</div>
+        <div class="summary-card">Discard: {{ discard|length }} cards</div>
+        <div class="summary-card">Ink: {{ ink|length }} cards</div>
+        <div class="summary-card tooltip" id="loreButton" style="background-color: #d3d3d3; color: black; #ccc;">
+            Lore (0)
+            <span class="tooltiptext">Left click +1, right click -1</span>
+        </div>
       </div>
       <h1 {% if deck %}style="display:none;"{% endif %}>Paste your deck (one card per line, use Copy Text output from lorcana.gg)</h1>
       <div {% if deck %}style="display:none;"{% endif %}>
         <form method="post" action="/add_to_deck" onsubmit="updateVisibilityForm()" style="display: inline;">
-          <textarea name="user_input" rows="10" cols="30" required></textarea>
+          <textarea name="user_input" rows="10" cols="60" required></textarea>
           <br><br>
           <input type="hidden" name="deck_visible" id="deck_visible" value="true">
           <input type="hidden" name="hand_visible" id="hand_visible" value="true">
@@ -266,20 +323,25 @@
         </form>
       </div>
       <div style="text-align: center; margin-top: 20px;">
-          <textarea id="logTextArea" rows="10" cols="50" readonly></textarea>
+          <textarea id="logTextArea" rows="10" cols="100" readonly></textarea>
+      </div>
+      <div>
+          <form method="post" action="/reset_deck" onsubmit="updateVisibilityForm()" style="display: inline;">
+            <button type="submit">Reset deck</button>
+          </form>
+          <form method="post" action="/reset" onsubmit="updateVisibilityForm()" style="display: inline;">
+            <button type="submit">Reset</button>
+          </form>
+          <form method="post" action="/load_assets" onsubmit="updateVisibilityForm()" style="display: inline;">
+            <button type="submit">Load Assets</button>
+          </form>
       </div>
       <br>
-      <button id="deckButton" onclick="toggleListVisibility('deckList', 'deckButton')">Show Deck</button>
-      <button id="handButton" onclick="toggleListVisibility('handList', 'handButton')">Show Hand</button>
+      <button id="deckButton" onclick="toggleListVisibility('deckList', 'deckButton')">Show deck</button>
+      <button id="handButton" onclick="toggleListVisibility('handList', 'handButton')">Show hand</button>
       <button id="boardButton" onclick="toggleListVisibility('boardList', 'boardButton')">Show board</button>
-      <button id="discardButton" onclick="toggleListVisibility('discardList', 'discardButton')">Show Discard</button>
-      <button id="inkButton" onclick="toggleListVisibility('inkList', 'inkButton')">Show Ink</button>
-      <form method="post" action="/reset" onsubmit="updateVisibilityForm()" style="display: inline;">
-        <button type="submit">Reset</button>
-      </form>
-      <form method="post" action="/load_assets" onsubmit="updateVisibilityForm()" style="display: inline;">
-        <button type="submit">Load Assets</button>
-      </form>
+      <button id="discardButton" onclick="toggleListVisibility('discardList', 'discardButton')">Show discard</button>
+      <button id="inkButton" onclick="toggleListVisibility('inkList', 'inkButton')">Show ink</button>
       <br><br>
       <div style="display: inline-block;">
         <form method="post" action="/draw_card" onsubmit="updateVisibilityForm()" style="display: inline;">
@@ -313,11 +375,11 @@
                 <img src="{{ url_for('static', filename='card_assets/' + item[2]) }}" alt="{{ item[0] }}" onerror="this.style.display='none'">
                 <div class="card-buttons">
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/hand/deck/{{ loop.index0 }}'">&#x2B06;</button>
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/hand/deck/{{ loop.index0 }}?add_to_top=true'">&#x2B06;</button>
                     <span class="tooltiptext">Add to top of deck</span>
                   </span>
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/hand/deck/{{ loop.index0 }}'">&#x2B07;</button>
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/hand/deck/{{ loop.index0 }}?add_to_bottom=true'">&#x2B07;</button>
                     <span class="tooltiptext">Add to bottom of deck</span>
                   </span>
                   <span class="tooltip">
@@ -352,11 +414,11 @@
                 <img src="{{ url_for('static', filename='card_assets/' + item[2]) }}" alt="{{ item[0] }}" onerror="this.style.display='none'">
                 <div class="card-buttons">
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/board/deck/{{ loop.index0 }}'">&#x2B06;</button>
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/board/deck/{{ loop.index0 }}?add_to_top=true'">&#x2B06;</button>
                     <span class="tooltiptext">Add to top of deck</span>
                   </span>
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/board/deck/{{ loop.index0 }}'">&#x2B07;</button>
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/board/deck/{{ loop.index0 }}?add_to_bottom=true'">&#x2B07;</button>
                     <span class="tooltiptext">Add to bottom of deck</span>
                   </span>
                   <span class="tooltip">
@@ -391,11 +453,11 @@
                 <img src="{{ url_for('static', filename='card_assets/' + item[2]) }}" alt="{{ item[0] }}" onerror="this.style.display='none'">
                 <div class="card-buttons">
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/discard/deck/{{ loop.index0 }}'">&#x2B06;</button>
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/discard/deck/{{ loop.index0 }}?add_to_top=true'">&#x2B06;</button>
                     <span class="tooltiptext">Add to top of deck</span>
                   </span>
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/discard/deck/{{ loop.index0 }}'">&#x2B07;</button>
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/discard/deck/{{ loop.index0 }}?add_to_bottom=true'">&#x2B07;</button>
                     <span class="tooltiptext">Add to bottom of deck</span>
                   </span>
                   <span class="tooltip">
@@ -430,11 +492,11 @@
                 <img src="{{ url_for('static', filename='card_assets/' + item[2]) }}" alt="{{ item[0] }}" onerror="this.style.display='none'">
                 <div class="card-buttons">
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/ink/deck/{{ loop.index0 }}'">&#x2B06;</button>
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/ink/deck/{{ loop.index0 }}?add_to_top=true'">&#x2B06;</button>
                     <span class="tooltiptext">Add to top of deck</span>
                   </span>
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/ink/deck/{{ loop.index0 }}'">&#x2B07;</button>
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/ink/deck/{{ loop.index0 }}?add_to_bottom=true'">&#x2B07;</button>
                     <span class="tooltiptext">Add to bottom of deck</span>
                   </span>
                   <span class="tooltip">

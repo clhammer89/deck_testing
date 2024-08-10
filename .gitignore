@@ -1,0 +1,3 @@
+static/card_assets/*
+/routes/__pycache__
+click_log.txt
