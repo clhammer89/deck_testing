@@ -1,6 +1,6 @@
 from flask import render_template, request, redirect, url_for
 from . import main_bp
-from shared_data import deck, hand, discard, ink
+from shared_data import deck, hand, discard, ink, board
 
 @main_bp.route('/', methods=['GET', 'POST'])
 def home():
@@ -8,4 +8,5 @@ def home():
     hand_visible = request.args.get('hand_visible', 'true') == 'true'
     discard_visible = request.args.get('discard_visible', 'false') == 'true'
     ink_visible = request.args.get('ink_visible', 'false') == 'true'
-    return render_template('index.html', deck=deck, hand=hand, discard=discard, ink=ink, deck_visible=deck_visible, hand_visible=hand_visible, discard_visible=discard_visible, ink_visible=ink_visible)
+    board_visible = request.args.get('board_visible', 'false') == 'true'
+    return render_template('index.html', deck=deck, hand=hand, discard=discard, ink=ink, board=board, deck_visible=deck_visible, hand_visible=hand_visible, discard_visible=discard_visible, ink_visible=ink_visible, board_visible=board_visible)

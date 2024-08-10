@@ -83,11 +83,13 @@
       function updateVisibilityForm() {
         const deckList = document.getElementById('deckList');
         const handList = document.getElementById('handList');
+        const boardList = document.getElementById('boardList');
         const discardList = document.getElementById('discardList');
         const inkList = document.getElementById('inkList');   
 
         if (deckList) document.getElementById('deck_visible').value = deckList.style.display !== 'none';
         if (handList) document.getElementById('hand_visible').value = handList.style.display !== 'none';
+        if (boardList) document.getElementById('board_visible').value = boardList.style.display !== 'none';
         if (discardList) document.getElementById('discard_visible').value = discardList.style.display !== 'none';
         if (inkList) document.getElementById('ink_visible').value = inkList.style.display !== 'none';
       }   
@@ -107,54 +109,196 @@
         }
       }
     </script>
+    <script>
+      function shuffleDeck() {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/shuffle_deck';    
+
+        // Append hidden inputs to maintain the visibility states of the lists
+        const deckVisibleInput = document.createElement('input');
+        deckVisibleInput.type = 'hidden';
+        deckVisibleInput.name = 'deck_visible';
+        deckVisibleInput.value = document.getElementById('deckList').style.display !== 'none';
+        form.appendChild(deckVisibleInput);   
+
+        const handVisibleInput = document.createElement('input');
+        handVisibleInput.type = 'hidden';
+        handVisibleInput.name = 'hand_visible';
+        handVisibleInput.value = document.getElementById('handList').style.display !== 'none';
+        form.appendChild(handVisibleInput);
+
+        const boardVisibleInput = document.createElement('input');
+        boardVisibleInput.type = 'hidden';
+        boardVisibleInput.name = 'board_visible';
+        boardVisibleInput.value = document.getElementById('boardList').style.display !== 'none';
+        form.appendChild(boardVisibleInput);   
+
+        const discardVisibleInput = document.createElement('input');
+        discardVisibleInput.type = 'hidden';
+        discardVisibleInput.name = 'discard_visible';
+        discardVisibleInput.value = document.getElementById('discardList').style.display !== 'none';
+        form.appendChild(discardVisibleInput);    
+
+        const inkVisibleInput = document.createElement('input');
+        inkVisibleInput.type = 'hidden';
+        inkVisibleInput.name = 'ink_visible';
+        inkVisibleInput.value = document.getElementById('inkList').style.display !== 'none';
+        form.appendChild(inkVisibleInput);    
+
+        document.body.appendChild(form);
+        form.submit();
+      }
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Fetch and populate the dropdown with txt files
+            fetch('/list_files')
+                .then(response => response.json())
+                .then(files => {
+                    const dropdown = document.getElementById('fileDropdown');
+                    files.forEach(file => {
+                        const option = document.createElement('option');
+                        option.value = file;
+                        option.textContent = file;
+                        dropdown.appendChild(option);
+                    });
+                });
+
+            // Handle file selection
+            document.getElementById('fileDropdown').addEventListener('change', function() {
+                const selectedFile = this.value;
+                if (selectedFile) {
+                    // Reset all lists
+                    fetch('/reset', { method: 'POST' })
+                        .then(() => {
+                            // Fetch the content of the selected file and load it into user_input
+                            fetch(`/get_file_content?file=${selectedFile}`)
+                                .then(response => response.text())
+                                .then(content => {
+                                    document.querySelector('textarea[name="user_input"]').value = content;
+                                });
+                        });
+                }
+            });
+        });
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Load initial counter value from the server
+            fetch('/get_lore')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('loreButton').textContent = `Lore (${data.lore})`;
+                });
+
+            // Add event listener for the button
+            document.getElementById('loreButton').addEventListener('click', function() {
+                fetch('/increment_lore', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        this.textContent = `Lore (${data.lore})`;
+                        updateLog();
+                    });
+            });
+        });
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            updateLog();  // Load the initial log
+        });
+
+        function logClick(buttonId) {
+            fetch('/log_click', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ button_id: buttonId }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    updateLog();  // Update the log after each click
+                }
+            });
+        }
+
+        function updateLog() {
+            fetch('/get_log')
+                .then(response => response.json())
+                .then(data => {
+                    const logTextArea = document.getElementById('logTextArea');
+                    logTextArea.value = data.log;       
+
+                    // Move the cursor to the end
+                    logTextArea.scrollTop = logTextArea.scrollHeight;
+                    logTextArea.setSelectionRange(logTextArea.value.length, logTextArea.value.length);
+                });
+        }
+    </script>
   </head>
   <body>
     <div style="text-align: center; margin-top: 50px;">
       <div class="summary-cards">
         <div class="card">Deck: {{ deck|length }} cards</div>
         <div class="card">Hand: {{ hand|length }} cards</div>
+        <div class="card">Board: {{ board|length }} cards</div>
         <div class="card">Discard: {{ discard|length }} cards</div>
         <div class="card">Ink: {{ ink|length }} cards</div>
+        <button id="loreButton">Lore (0)</button>
       </div>
-      <h1>Paste your deck (one card per line, use Copy Text output from lorcana.gg)</h1>
-      <div>
+      <h1 {% if deck %}style="display:none;"{% endif %}>Paste your deck (one card per line, use Copy Text output from lorcana.gg)</h1>
+      <div {% if deck %}style="display:none;"{% endif %}>
         <form method="post" action="/add_to_deck" onsubmit="updateVisibilityForm()" style="display: inline;">
           <textarea name="user_input" rows="10" cols="30" required></textarea>
           <br><br>
           <input type="hidden" name="deck_visible" id="deck_visible" value="true">
           <input type="hidden" name="hand_visible" id="hand_visible" value="true">
+          <input type="hidden" name="board_visible" id="board_visible" value="true">
           <input type="hidden" name="discard_visible" id="discard_visible" value="true">
           <input type="hidden" name="ink_visible" id="ink_visible" value="true">
-          <button type="submit">Submit</button>
+          <label for="fileDropdown">Select a deck:</label>
+          <select id="fileDropdown">
+              <option value="" disabled selected>Select a file</option>
+          </select>
+          <button id="submitButton" type="submit">Submit</button>
         </form>
-        <form method="post" action="/reset" onsubmit="updateVisibilityForm()" style="display: inline;">
-          <button type="submit">Reset</button>
-        </form>
-        <form method="post" action="/load_assets" onsubmit="updateVisibilityForm()" style="display: inline;">
-          <button type="submit">Load Assets</button>
-        </form>
+      </div>
+      <div style="text-align: center; margin-top: 20px;">
+          <textarea id="logTextArea" rows="10" cols="50" readonly></textarea>
       </div>
       <br>
       <button id="deckButton" onclick="toggleListVisibility('deckList', 'deckButton')">Show Deck</button>
       <button id="handButton" onclick="toggleListVisibility('handList', 'handButton')">Show Hand</button>
+      <button id="boardButton" onclick="toggleListVisibility('boardList', 'boardButton')">Show board</button>
       <button id="discardButton" onclick="toggleListVisibility('discardList', 'discardButton')">Show Discard</button>
       <button id="inkButton" onclick="toggleListVisibility('inkList', 'inkButton')">Show Ink</button>
+      <form method="post" action="/reset" onsubmit="updateVisibilityForm()" style="display: inline;">
+        <button type="submit">Reset</button>
+      </form>
+      <form method="post" action="/load_assets" onsubmit="updateVisibilityForm()" style="display: inline;">
+        <button type="submit">Load Assets</button>
+      </form>
       <br><br>
       <div style="display: inline-block;">
         <form method="post" action="/draw_card" onsubmit="updateVisibilityForm()" style="display: inline;">
           <input type="hidden" name="deck_visible" id="deck_visible" value="true">
           <input type="hidden" name="hand_visible" id="hand_visible" value="true">
+          <input type="hidden" name="board_visible" id="board_visible" value="true">
           <input type="hidden" name="discard_visible" id="discard_visible" value="true">
           <input type="hidden" name="ink_visible" id="ink_visible" value="true">
-          <button type="submit">Draw</button>
+          <button id="drawButton" type="submit">Draw</button>
         </form>
         <form method="post" action="/draw_seven_cards" onsubmit="updateVisibilityForm()" style="display: inline;">
           <input type="hidden" name="deck_visible" id="deck_visible" value="true">
           <input type="hidden" name="hand_visible" id="hand_visible" value="true">
+          <input type="hidden" name="board_visible" id="board_visible" value="true">
           <input type="hidden" name="discard_visible" id="discard_visible" value="true">
           <input type="hidden" name="ink_visible" id="ink_visible" value="true">
-          <button type="submit">Draw 7</button>
+          <button id="draw7button" type="submit">Draw 7</button>
         </form>
+        <button id="shuffleDeckButton" onclick="shuffleDeck()">Shuffle Deck</button>
       </div>
       <!-- Hand List -->
       <div id="handList" style="margin-top: 20px;">
@@ -177,11 +321,54 @@
                     <span class="tooltiptext">Add to bottom of deck</span>
                   </span>
                   <span class="tooltip">
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/hand/board/{{ loop.index0 }}'">&#x2B1C;</button>
+                    <span class="tooltiptext">Add to board</span>
+                  </span>
+                  <span class="tooltip">
                     <button onclick="updateVisibilityForm(); location.href='/move_item/hand/discard/{{ loop.index0 }}'">&#x274C;</button>
                     <span class="tooltiptext">Add to discard</span>
                   </span>
                   <span class="tooltip">
                     <button onclick="updateVisibilityForm(); location.href='/move_item/hand/ink/{{ loop.index0 }}'">&#x1F58B;</button>
+                    <span class="tooltiptext">Add to ink</span>
+                  </span>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Board List -->
+      <div id="boardList" style="margin-top: 20px;">
+        {% if board %}
+          <h2>Your Board ({{ board|length }})</h2>
+          <div class="card-container">
+            {% for item in board %}
+              <div class="card">
+                <div>
+                {{ item[0] }}
+                </div>
+                <img src="{{ url_for('static', filename='card_assets/' + item[2]) }}" alt="{{ item[0] }}" onerror="this.style.display='none'">
+                <div class="card-buttons">
+                  <span class="tooltip">
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/board/deck/{{ loop.index0 }}'">&#x2B06;</button>
+                    <span class="tooltiptext">Add to top of deck</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/board/deck/{{ loop.index0 }}'">&#x2B07;</button>
+                    <span class="tooltiptext">Add to bottom of deck</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/board/hand/{{ loop.index0 }}'">&#x1F91D;</button>
+                    <span class="tooltiptext">Add to hand</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/board/discard/{{ loop.index0 }}'">&#x274C;</button>
+                    <span class="tooltiptext">Add to discard</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/board/ink/{{ loop.index0 }}'">&#x1F58B;</button>
                     <span class="tooltiptext">Add to ink</span>
                   </span>
                 </div>
@@ -216,6 +403,10 @@
                     <span class="tooltiptext">Add to hand</span>
                   </span>
                   <span class="tooltip">
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/discard/board/{{ loop.index0 }}'">&#x2B1C;</button>
+                    <span class="tooltiptext">Add to board</span>
+                  </span>
+                  <span class="tooltip">
                     <button onclick="updateVisibilityForm(); location.href='/move_item/discard/ink/{{ loop.index0 }}'">&#x1F58B;</button>
                     <span class="tooltiptext">Add to ink</span>
                   </span>
@@ -239,12 +430,20 @@
                 <img src="{{ url_for('static', filename='card_assets/' + item[2]) }}" alt="{{ item[0] }}" onerror="this.style.display='none'">
                 <div class="card-buttons">
                   <span class="tooltip">
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/ink/deck/{{ loop.index0 }}'">&#x2B06;</button>
+                    <span class="tooltiptext">Add to top of deck</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/ink/deck/{{ loop.index0 }}'">&#x2B07;</button>
+                    <span class="tooltiptext">Add to bottom of deck</span>
+                  </span>
+                  <span class="tooltip">
                     <button onclick="updateVisibilityForm(); location.href='/move_item/ink/hand/{{ loop.index0 }}'">&#x1F91D;</button>
                     <span class="tooltiptext">Add to hand</span>
                   </span>
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/ink/deck/{{ loop.index0 }}'">&#x2B06;</button>
-                    <span class="tooltiptext">Add to top of deck</span>
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/ink/board/{{ loop.index0 }}'">&#x2B1C;</button>
+                    <span class="tooltiptext">Add to board</span>
                   </span>
                   <span class="tooltip">
                     <button onclick="updateVisibilityForm(); location.href='/move_item/ink/discard/{{ loop.index0 }}'">&#x274C;</button>
@@ -275,6 +474,10 @@
                   <span class="tooltip">
                     <button onclick="updateVisibilityForm(); location.href='/move_item/deck/discard/{{ loop.index0 }}'">&#x274C;</button>
                     <span class="tooltiptext">Add to discard</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/deck/board/{{ loop.index0 }}'">&#x2B1C;</button>
+                    <span class="tooltiptext">Add to board</span>
                   </span>
                   <span class="tooltip">
                     <button onclick="updateVisibilityForm(); location.href='/move_item/deck/ink/{{ loop.index0 }}'">&#x1F58B;</button>

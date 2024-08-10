@@ -14,6 +14,7 @@ with open('card_list.json', 'r') as f:
 def load_assets():
     deck_visible = request.form.get('deck_visible') == 'true'
     hand_visible = request.form.get('hand_visible') == 'true'
+    board_visible = request.form.get('board_visible') == 'true'
     discard_visible = request.form.get('discard_visible') == 'true'
     ink_visible = request.form.get('ink_visible') == 'true'
 
@@ -33,4 +34,4 @@ def load_assets():
                     else:
                         print(f"Failed to download {image_url}")
                 break
-    return redirect(url_for('main.home', deck_visible=deck_visible, hand_visible=hand_visible, discard_visible=discard_visible, ink_visible=ink_visible))
+    return redirect(url_for('main.home', deck_visible=deck_visible, hand_visible=hand_visible, discard_visible=discard_visible, ink_visible=ink_visible, board_visible=board_visible))
