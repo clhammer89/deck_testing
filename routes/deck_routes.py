@@ -1,4 +1,4 @@
-from flask import Blueprint, request, redirect, url_for, jsonify
+from flask import Blueprint, request, redirect, url_for, jsonify, session
 import random
 import os
 from shared_data import deck, hand, discard, ink, board
@@ -19,11 +19,6 @@ clear_log_file()
 def add_to_deck():
     global deck
     user_input = request.form.get('user_input')
-    deck_visible = request.form.get('deck_visible') == 'true'
-    hand_visible = request.form.get('hand_visible') == 'true'
-    board_visible = request.form.get('board_visible') == 'true'
-    discard_visible = request.form.get('discard_visible') == 'true'
-    ink_visible = request.form.get('ink_visible') == 'true'
     # Clear the existing deck
     deck.clear()
     # Split the input by new lines
@@ -45,16 +40,11 @@ def add_to_deck():
     deck.sort(key=lambda x: x[1])
     log_text = "Deck loaded. Click Load Assets to download card pictures and draw your hand."
     log_click(log_text)
-    return redirect(url_for('main.home', board_visible=board_visible, deck_visible=deck_visible, hand_visible=hand_visible, discard_visible=discard_visible, ink_visible=ink_visible))
+    return redirect(url_for('main.home'))
 
 @deck_bp.route('/reset', methods=['POST'])
 def reset():
     global deck, hand, discard, ink, board, lore
-    deck_visible = request.form.get('deck_visible') == 'false'
-    hand_visible = request.form.get('hand_visible') == 'true'
-    board_visible = request.form.get('board_visible') == 'true'
-    discard_visible = request.form.get('discard_visible') == 'false'
-    ink_visible = request.form.get('ink_visible') == 'false'
     # Clear all lists
     deck.clear()
     hand.clear()
@@ -62,17 +52,11 @@ def reset():
     ink.clear()
     board.clear()
     lore = 0
-    return redirect(url_for('main.home', board_visible=board_visible, deck_visible=deck_visible, hand_visible=hand_visible, discard_visible=discard_visible, ink_visible=ink_visible))
+    return redirect(url_for('main.home'))
 
 @deck_bp.route('/reset_deck', methods=['POST'])
 def reset_deck():
     global deck, hand, discard, ink, board, lore
-    deck_visible = request.form.get('deck_visible') == 'false'
-    hand_visible = request.form.get('hand_visible') == 'true'
-    board_visible = request.form.get('board_visible') == 'true'
-    discard_visible = request.form.get('discard_visible') == 'false'
-    ink_visible = request.form.get('ink_visible') == 'false'
-
     # Move items to deck
     deck.extend(hand)
     deck.extend(board)
@@ -92,16 +76,11 @@ def reset_deck():
     lore = 0
     log_text = "All cards returned to deck and Lore set to 0"
     log_click(log_text)
-    return redirect(url_for('main.home', board_visible=board_visible, deck_visible=deck_visible, hand_visible=hand_visible, discard_visible=discard_visible, ink_visible=ink_visible))
+    return redirect(url_for('main.home'))
 
 @deck_bp.route('/draw_card', methods=['POST'])
 def draw_card():
     global deck, hand
-    deck_visible = request.form.get('deck_visible') == 'false'
-    hand_visible = request.form.get('hand_visible') == 'true'
-    board_visible = request.form.get('board_visible') == 'true'
-    discard_visible = request.form.get('discard_visible') == 'false'
-    ink_visible = request.form.get('ink_visible') == 'false'
     if deck:
         smallest_card = min(deck, key=lambda x: x[1])
         deck.remove(smallest_card)
@@ -113,11 +92,6 @@ def draw_card():
 @deck_bp.route('/draw_seven_cards', methods=['POST'])
 def draw_seven_cards():
     global deck, hand
-    deck_visible = request.form.get('deck_visible') == 'false'
-    hand_visible = request.form.get('hand_visible', 'true') == 'true'
-    board_visible = request.form.get('board_visible', 'true') == 'true'
-    discard_visible = request.form.get('discard_visible') == 'false'
-    ink_visible = request.form.get('ink_visible') == 'false'
     for _ in range(7):
         if deck:
             smallest_card = min(deck, key=lambda x: x[1])
@@ -188,7 +162,7 @@ def shuffle_deck():
     log_text = "Deck shuffled"
     log_click(log_text)
 
-    return redirect(url_for('main.home', deck_visible=True, hand_visible=True, discard_visible=True, ink_visible=True, board_visible=True))
+    return redirect(url_for('main.home'))
 
 @deck_bp.route('/list_files', methods=['GET'])
 def list_files():
