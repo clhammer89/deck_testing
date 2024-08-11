@@ -1,0 +1,13 @@
+App started. Paste your deck into the box above or select a deck from the dropdown.
+Deck loaded. Click Load Assets to download card pictures and draw your hand.
+Donald Duck - Perfect Gentleman drawn from deck
+We Don't Talk About Bruno drawn from deck
+Aladdin - Brave Rescuer drawn from deck
+Bucky - Squirrel Squeak Tutor drawn from deck
+Bucky - Squirrel Squeak Tutor drawn from deck
+Tinker Bell - Giant Fairy drawn from deck
+Ba-Boom! drawn from deck
+Donald Duck - Perfect Gentleman drawn from deck
+Bucky - Squirrel Squeak Tutor moved from hand to board
+Bucky - Squirrel Squeak Tutor moved from hand to discard
+Tinker Bell - Giant Fairy moved from hand to ink

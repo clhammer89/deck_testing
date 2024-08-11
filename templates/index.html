@@ -5,11 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Card Management</title>
     <style>
+      body {
+        background-color: #ffffff; /* Light background */
+        color: #000000; /* Dark text color */
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        transition: background-color 0.3s, color 0.3s; /* Smooth transition */
+      }
+      .dark-mode {
+        background-color: #121212; /* Dark background */
+        color: #e0e0e0; /* Light text color */
+      }
       .card-container {
         display: flex;
         flex-wrap: wrap;
         justify-content: center;  /* Center items horizontally */
         align-items: center;      /* Center items vertically */
+        overflow: visible;
+        background-color: inherit; /* Inherit the background color from body */
       }  
       .card {
         display: flex;
@@ -22,33 +36,70 @@
         padding: 10px;
         margin: 10px; /* Adjust margin for spacing between cards */
         box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
-        background-color: #f9f9f9;
+        background-image: url('static/card_assets/proxy.png');
+        background-size: cover;
+        background-position: center;
         text-align: center;
         overflow: hidden; /* Hide overflow text */
         text-overflow: ellipsis; /* Add ellipsis (...) for overflowing text */
         white-space: nowrap; /* Prevent text from wrapping to the next line */
+        z-index: 10;
+      }
+      .dark-mode .card {
+        border: 1px solid #333;
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+      }
+      .card-text-container {
+        background-color: rgba(255, 255, 255, 0.8);
+        padding: 5px;
+        border-radius: 5px;
+        color: inherit; /* Ensure text color is inherited */
+      }
+      .dark-mode .card-text-container {
+        background-color: rgba(18, 18, 18, 0.8);
+      }
+      .card-buttons-container {
+        background-color: rgba(255, 255, 255, 0.8);
+        padding: 5px;
+        border-radius: 5px;
+        margin-top: auto;
+        display: flex;
+        justify-content: center;
+        gap: 5px;
+        margin-top: -10px;
+        color: inherit; /* Ensure text color is inherited */
+      }
+      .dark-mode .card-buttons-container {
+        background-color: rgba(18, 18, 18, 0.8);
       }
       .summary-card {
         display: inline-block;
         border: 1px solid #ccc;
         border-radius: 5px;
-        width: 115px;
+        width: 120px;
         height: 20px;
         padding: 10px;
         margin: 10px; /* Adjust margin for spacing between cards */
         box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
         background-color: #f9f9f9;
         text-align: center;
+        color: #000000;
         user-select: none; /* Standard for most modern browsers */
         -webkit-user-select: none; /* Safari */
         -moz-user-select: none; /* Firefox */
         -ms-user-select: none; /* IE10+ */
       }
+      .dark-mode .summary-card {
+        border: 1px solid #333;
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+        background-color: #1c1c1c;
+        color: #e0e0e0;
+      }
       .card img {
         max-width: 220px;
         max-height: 300px;
         margin-bottom: 10px;
-        margin-top: 20px;
+        margin-top: 15px;
       }
       .card button {
         border: none;
@@ -56,6 +107,7 @@
         cursor: pointer;
         font-size: 1.2em;
         margin: 0 5px;
+        color: inherit; /* Inherit the text color */
       }
       .card-buttons {
         margin-top: auto; /* Push the buttons to the bottom */
@@ -90,22 +142,139 @@
         margin-left: -60px;
         opacity: 0;
         transition: opacity 0.3s;
+        overflow: visible;
       }
       .tooltip:hover .tooltiptext {
         visibility: visible;
         opacity: 1;
       }
+      .tooltip .tooltiptext::after {
+        content: " ";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #555 transparent transparent transparent; /* Arrow color matches tooltip background */
+      }
+      .dark-mode .tooltip .tooltiptext {
+        background-color: #222;
+        color: #e0e0e0;
+      }
+
+      /* Dark Mode Toggle Button */
+      #darkModeToggle {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        padding: 10px 20px;
+        background-color: #444;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        z-index: 1000;
+      }
+      #darkModeToggle:hover {
+        background-color: #555;
+      }
+      #profile-container {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        width: 250px;
+        height: 250px;
+        overflow: hidden;
+        cursor: pointer;
+        z-index: 1000;
+        transition: transform 0.3s;
+      }     
+
+      #profile-container:hover {
+        transform: scale(1.1);
+      }
+
+      #profile-pic {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: opacity 0.3s;
+      }     
+
+      .dark-mode #profile-pic {
+        content: url('/static/profile/default-dark.png');
+      }
     </style>
     <script>
       document.addEventListener("DOMContentLoaded", function() {
-        const deckList = document.getElementById('deckList');
-        const discardList = document.getElementById('discardList');
-        const inkList = document.getElementById('inkList');   
+        const darkModeToggle = document.getElementById('profile-pic');
 
-        if (deckList) deckList.style.display = 'none';
-        if (discardList) discardList.style.display = 'none';
-        if (inkList) inkList.style.display = 'none';
-      });   
+        // Load dark mode preference
+        if (localStorage.getItem('darkMode') === 'enabled') {
+          document.body.classList.add('dark-mode');
+        }
+
+        darkModeToggle.addEventListener('click', function() {
+          document.body.classList.toggle('dark-mode');
+          if (document.body.classList.contains('dark-mode')) {
+            localStorage.setItem('darkMode', 'enabled');
+          } else {
+            localStorage.setItem('darkMode', 'disabled');
+          }
+        });
+
+        // Populate deck dropdown
+        fetch('/list_files')
+          .then(response => response.json())
+          .then(files => {
+            const dropdown = document.getElementById('fileDropdown');
+            files.forEach(file => {
+              const option = document.createElement('option');
+              option.value = file;
+              option.textContent = file;
+              dropdown.appendChild(option);
+            });
+          });
+
+        // Initialize lists to hidden (except hand and board)
+        const listsToHide = ['deckList', 'discardList', 'inkList'];
+        listsToHide.forEach(listId => {
+          const list = document.getElementById(listId);
+          if (list) list.style.display = 'none';
+        });
+
+        const listsToShow = ['handList', 'boardList'];
+        listsToShow.forEach(listId => {
+          const list = document.getElementById(listId);
+          if (list) list.style.display = 'block';
+        });
+
+        // Lore button click events
+        const loreButton = document.getElementById('loreButton');
+        loreButton.addEventListener('click', function() {
+          fetch('/increment_lore', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+              loreButton.textContent = `Lore (${data.lore})`;
+              updateLog();
+            });
+        });
+
+        loreButton.addEventListener('contextmenu', function(event) {
+          event.preventDefault(); // Prevent the context menu from appearing    
+          fetch('/decrement_lore', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+              loreButton.textContent = `Lore (${data.lore})`;
+              updateLog();
+            });
+        });
+
+        // Load the initial log content
+        updateLog();
+
+      });
 
       function updateVisibilityForm() {
         const deckList = document.getElementById('deckList');
@@ -135,8 +304,7 @@
           }
         }
       }
-    </script>
-    <script>
+
       function shuffleDeck() {
         const form = document.createElement('form');
         form.method = 'POST';
@@ -176,123 +344,44 @@
         document.body.appendChild(form);
         form.submit();
       }
-    </script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            // Fetch and populate the dropdown with txt files
-            fetch('/list_files')
-                .then(response => response.json())
-                .then(files => {
-                    const dropdown = document.getElementById('fileDropdown');
-                    files.forEach(file => {
-                        const option = document.createElement('option');
-                        option.value = file;
-                        option.textContent = file;
-                        dropdown.appendChild(option);
-                    });
-                });
 
-            // Handle file selection
-            document.getElementById('fileDropdown').addEventListener('change', function() {
-                const selectedFile = this.value;
-                if (selectedFile) {
-                    // Reset all lists
-                    fetch('/reset', { method: 'POST' })
-                        .then(() => {
-                            // Fetch the content of the selected file and load it into user_input
-                            fetch(`/get_file_content?file=${selectedFile}`)
-                                .then(response => response.text())
-                                .then(content => {
-                                    document.querySelector('textarea[name="user_input"]').value = content;
-                                });
-                        });
-                }
+      // Adjust the submit button to load a deck if selected
+      function handleSubmit() {
+        const userInput = document.querySelector('textarea[name="user_input"]').value;
+        const fileDropdown = document.getElementById('fileDropdown');
+        const selectedFile = fileDropdown.value;
+
+        if (!userInput && selectedFile) {
+          fetch(`/get_file_content?file=${selectedFile}`)
+            .then(response => response.text())
+            .then(content => {
+              document.querySelector('textarea[name="user_input"]').value = content;
+              document.querySelector('form').submit();
             });
-        });
-    </script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const loreButton = document.getElementById('loreButton');   
-
-            // Load initial counter value from the server
-            fetch('/get_lore')
-                .then(response => response.json())
-                .then(data => {
-                    loreButton.textContent = `Lore (${data.lore})`;
-                });   
-
-            // Left-click: increment lore count
-            loreButton.addEventListener('click', function() {
-                fetch('/increment_lore', { method: 'POST' })
-                    .then(response => response.json())
-                    .then(data => {
-                        this.textContent = `Lore (${data.lore})`;
-                        updateLog();
-                    });
-            });   
-
-            // Right-click: decrement lore count and prevent context menu
-            loreButton.addEventListener('contextmenu', function(event) {
-                event.preventDefault(); // Prevent the context menu from appearing    
-
-                fetch('/decrement_lore', { method: 'POST' })
-                    .then(response => response.json())
-                    .then(data => {
-                        this.textContent = `Lore (${data.lore})`;
-                        updateLog();
-                    });
-            });
-        });   
-
-        function updateLog() {
-            fetch('/get_log')
-                .then(response => response.json())
-                .then(data => {
-                    const logTextArea = document.getElementById('logTextArea');
-                    logTextArea.value = data.log;   
-
-                    // Move the cursor to the end
-                    logTextArea.scrollTop = logTextArea.scrollHeight;
-                    logTextArea.setSelectionRange(logTextArea.value.length, logTextArea.value.length);
-                });
+        } else {
+          document.querySelector('form').submit();
         }
-    </script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            updateLog();  // Load the initial log
-        });
+      }
 
-        function logClick(buttonId) {
-            fetch('/log_click', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ button_id: buttonId }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === "success") {
-                    updateLog();  // Update the log after each click
-                }
-            });
-        }
+      // Update log area with the content from click_log.txt
+      function updateLog() {
+        fetch('/get_log')
+          .then(response => response.json())
+          .then(data => {
+                const logTextArea = document.getElementById('logTextArea');
+                logTextArea.value = data.log;       
 
-        function updateLog() {
-            fetch('/get_log')
-                .then(response => response.json())
-                .then(data => {
-                    const logTextArea = document.getElementById('logTextArea');
-                    logTextArea.value = data.log;       
-
-                    // Move the cursor to the end
-                    logTextArea.scrollTop = logTextArea.scrollHeight;
-                    logTextArea.setSelectionRange(logTextArea.value.length, logTextArea.value.length);
-                });
-        }
+                // Move the cursor to the end
+                logTextArea.scrollTop = logTextArea.scrollHeight;
+                logTextArea.setSelectionRange(logTextArea.value.length, logTextArea.value.length);
+          });
+      }
     </script>
   </head>
   <body>
+    <div id="profile-container">
+      <img id="profile-pic" src="/static/profile/default-light.png" alt="Profile Picture">
+    </div>
     <div style="text-align: center; margin-top: 50px;">
       <div class="summary-cards">
         <div class="summary-card">Deck: {{ deck|length }} cards</div>
@@ -300,15 +389,15 @@
         <div class="summary-card">Board: {{ board|length }} cards</div>
         <div class="summary-card">Discard: {{ discard|length }} cards</div>
         <div class="summary-card">Ink: {{ ink|length }} cards</div>
-        <div class="summary-card tooltip" id="loreButton" style="background-color: #d3d3d3; color: black; #ccc;">
+        <div class="summary-card tooltip" id="loreButton" style="background-color: #d3d3d3; color: black;">
             Lore (0)
             <span class="tooltiptext">Left click +1, right click -1</span>
         </div>
       </div>
       <h1 {% if deck %}style="display:none;"{% endif %}>Paste your deck (one card per line, use Copy Text output from lorcana.gg)</h1>
       <div {% if deck %}style="display:none;"{% endif %}>
-        <form method="post" action="/add_to_deck" onsubmit="updateVisibilityForm()" style="display: inline;">
-          <textarea name="user_input" rows="10" cols="60" required></textarea>
+        <form method="post" action="/add_to_deck" onsubmit="updateVisibilityForm(); handleSubmit(); return false;" style="display: inline;">
+          <textarea name="user_input" rows="10" cols="60"></textarea>
           <br><br>
           <input type="hidden" name="deck_visible" id="deck_visible" value="true">
           <input type="hidden" name="hand_visible" id="hand_visible" value="true">
@@ -338,8 +427,8 @@
       </div>
       <br>
       <button id="deckButton" onclick="toggleListVisibility('deckList', 'deckButton')">Show deck</button>
-      <button id="handButton" onclick="toggleListVisibility('handList', 'handButton')">Show hand</button>
-      <button id="boardButton" onclick="toggleListVisibility('boardList', 'boardButton')">Show board</button>
+      <button id="handButton" onclick="toggleListVisibility('handList', 'handButton')">Hide hand</button>
+      <button id="boardButton" onclick="toggleListVisibility('boardList', 'boardButton')">Hide board</button>
       <button id="discardButton" onclick="toggleListVisibility('discardList', 'discardButton')">Show discard</button>
       <button id="inkButton" onclick="toggleListVisibility('inkList', 'inkButton')">Show ink</button>
       <br><br>
@@ -369,31 +458,33 @@
           <div class="card-container">
             {% for item in hand %}
               <div class="card">
-                <div>
-                {{ item[0] }}
-                </div>
-                <img src="{{ url_for('static', filename='card_assets/' + item[2]) }}" alt="{{ item[0] }}" onerror="this.style.display='none'">
-                <div class="card-buttons">
-                  <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/hand/deck/{{ loop.index0 }}?add_to_top=true'">&#x2B06;</button>
-                    <span class="tooltiptext">Add to top of deck</span>
-                  </span>
-                  <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/hand/deck/{{ loop.index0 }}?add_to_bottom=true'">&#x2B07;</button>
-                    <span class="tooltiptext">Add to bottom of deck</span>
-                  </span>
-                  <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/hand/board/{{ loop.index0 }}'">&#x2B1C;</button>
-                    <span class="tooltiptext">Add to board</span>
-                  </span>
-                  <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/hand/discard/{{ loop.index0 }}'">&#x274C;</button>
-                    <span class="tooltiptext">Add to discard</span>
-                  </span>
-                  <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/hand/ink/{{ loop.index0 }}'">&#x1F58B;</button>
-                    <span class="tooltiptext">Add to ink</span>
-                  </span>
+                <div class="card-text-container">
+                    <div>
+                    {{ item[0] }}
+                    </div>
+                    <img src="{{ url_for('static', filename='card_assets/' + item[2]) }}" alt="{{ item[0] }}" onerror="this.style.display='none'">
+                    <div class="card-buttons-container">
+                      <span class="tooltip">
+                        <button onclick="updateVisibilityForm(); location.href='/move_item/hand/deck/{{ loop.index0 }}?add_to_top=true'">&#x2B06;</button>
+                        <span class="tooltiptext">Add to top of deck</span>
+                      </span>
+                      <span class="tooltip">
+                        <button onclick="updateVisibilityForm(); location.href='/move_item/hand/deck/{{ loop.index0 }}?add_to_bottom=true'">&#x2B07;</button>
+                        <span class="tooltiptext">Add to bottom of deck</span>
+                      </span>
+                      <span class="tooltip">
+                        <button onclick="updateVisibilityForm(); location.href='/move_item/hand/board/{{ loop.index0 }}'">&#x2B1C;</button>
+                        <span class="tooltiptext">Add to board</span>
+                      </span>
+                      <span class="tooltip">
+                        <button onclick="updateVisibilityForm(); location.href='/move_item/hand/discard/{{ loop.index0 }}'">&#x274C;</button>
+                        <span class="tooltiptext">Add to discard</span>
+                      </span>
+                      <span class="tooltip">
+                        <button onclick="updateVisibilityForm(); location.href='/move_item/hand/ink/{{ loop.index0 }}'">&#x1F58B;</button>
+                        <span class="tooltiptext">Add to ink</span>
+                      </span>
+                    </div>
                 </div>
               </div>
             {% endfor %}
@@ -408,11 +499,13 @@
           <div class="card-container">
             {% for item in board %}
               <div class="card">
-                <div>
-                {{ item[0] }}
+                <div class="card-text-container">
+                  <div>
+                  {{ item[0] }}
+                  </div>
                 </div>
                 <img src="{{ url_for('static', filename='card_assets/' + item[2]) }}" alt="{{ item[0] }}" onerror="this.style.display='none'">
-                <div class="card-buttons">
+                <div class="card-buttons-container">
                   <span class="tooltip">
                     <button onclick="updateVisibilityForm(); location.href='/move_item/board/deck/{{ loop.index0 }}?add_to_top=true'">&#x2B06;</button>
                     <span class="tooltiptext">Add to top of deck</span>
@@ -447,11 +540,13 @@
           <div class="card-container">
             {% for item in discard %}
               <div class="card">
-                <div>
-                {{ item[0] }}
+                <div class="card-text-container">
+                  <div>
+                  {{ item[0] }}
+                  </div>
                 </div>
                 <img src="{{ url_for('static', filename='card_assets/' + item[2]) }}" alt="{{ item[0] }}" onerror="this.style.display='none'">
-                <div class="card-buttons">
+                <div class="card-buttons-container">
                   <span class="tooltip">
                     <button onclick="updateVisibilityForm(); location.href='/move_item/discard/deck/{{ loop.index0 }}?add_to_top=true'">&#x2B06;</button>
                     <span class="tooltiptext">Add to top of deck</span>
@@ -469,8 +564,8 @@
                     <span class="tooltiptext">Add to board</span>
                   </span>
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/discard/ink/{{ loop.index0 }}'">&#x1F58B;</button>
-                    <span class="tooltiptext">Add to ink</span>
+                    <button onclick="updateVisibilityForm(); location.href='/move_item/discard/ink/{{ loop.index0 }}'">&#x274C;</button>
+                    <span class="tooltiptext">Add to discard</span>
                   </span>
                 </div>
               </div>
@@ -486,11 +581,13 @@
           <div class="card-container">
             {% for item in ink %}
               <div class="card">
-                <div>
-                {{ item[0] }}
+                <div class="card-text-container">
+                  <div>
+                  {{ item[0] }}
+                  </div>
                 </div>
                 <img src="{{ url_for('static', filename='card_assets/' + item[2]) }}" alt="{{ item[0] }}" onerror="this.style.display='none'">
-                <div class="card-buttons">
+                <div class="card-buttons-container">
                   <span class="tooltip">
                     <button onclick="updateVisibilityForm(); location.href='/move_item/ink/deck/{{ loop.index0 }}?add_to_top=true'">&#x2B06;</button>
                     <span class="tooltiptext">Add to top of deck</span>
@@ -524,11 +621,13 @@
           <div class="card-container">
             {% for item in deck %}
               <div class="card">
-                <div>
-                {{ item[0] }}
+                <div class="card-text-container">
+                  <div>
+                  {{ item[0] }}
+                  </div>
                 </div>
                 <img src="{{ url_for('static', filename='card_assets/' + item[2]) }}" alt="{{ item[0] }}" onerror="this.style.display='none'">
-                <div class="card-buttons">
+                <div class="card-buttons-container">
                   <span class="tooltip">
                     <button onclick="updateVisibilityForm(); location.href='/move_item/deck/hand/{{ loop.index0 }}'">&#x1F91D;</button>
                     <span class="tooltiptext">Add to hand</span>
