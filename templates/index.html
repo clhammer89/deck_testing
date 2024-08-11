@@ -485,10 +485,12 @@
             <span class="tooltiptext">Left click +1, right click -1</span>
         </div>
       </div>
-      <h1 {% if deck %}style="display:none;"{% endif %}>Paste your deck (one card per line, use Copy Text output from lorcana.gg)</h1>
       <div {% if deck %}style="display:none;"{% endif %}>
         <form method="post" action="/add_to_deck" onsubmit="updateVisibilityForm(); handleSubmit(); return false;" style="display: inline;">
-          <textarea name="user_input" rows="10" cols="60"></textarea>
+          <textarea name="user_input" id="user_input" rows="10" cols="60" placeholder="Paste your deck line-by-line, preface with # for multiples
+2 A Whole New World
+3 Grab Your Sword
+Dragon Fire"></textarea>
           <br><br>
           <input type="hidden" name="deck_visible" id="deck_visible" value="true">
           <input type="hidden" name="hand_visible" id="hand_visible" value="true">
@@ -510,7 +512,7 @@
             <button type="submit">Reset deck</button>
           </form>
           <form method="post" action="/reset" onsubmit="updateVisibilityForm()" style="display: inline;">
-            <button type="submit">Reset</button>
+            <button type="submit">New deck</button>
           </form>
           <form method="post" action="/load_assets" onsubmit="updateVisibilityForm()" style="display: inline;">
             <button type="submit">Load Assets</button>

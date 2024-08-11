@@ -52,6 +52,7 @@ def reset():
     ink.clear()
     board.clear()
     lore = 0
+    clear_log_file()
     return redirect(url_for('main.home'))
 
 @deck_bp.route('/reset_deck', methods=['POST'])
