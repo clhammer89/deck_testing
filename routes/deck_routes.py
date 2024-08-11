@@ -108,7 +108,7 @@ def draw_card():
         hand.append((smallest_card[0], 0, smallest_card[2]))
         log_text = f"{smallest_card[0]} drawn from deck"
         log_click(log_text)
-    return redirect(url_for('main.home', board_visible=board_visible, deck_visible=deck_visible, hand_visible=hand_visible, discard_visible=discard_visible, ink_visible=ink_visible))
+    return redirect(url_for('main.home'))
 
 @deck_bp.route('/draw_seven_cards', methods=['POST'])
 def draw_seven_cards():
@@ -125,7 +125,7 @@ def draw_seven_cards():
             hand.append((smallest_card[0], 0, smallest_card[2]))
             log_text = f"{smallest_card[0]} drawn from deck"
             log_click(log_text)
-    return redirect(url_for('main.home', board_visible=board_visible, deck_visible=deck_visible, hand_visible=hand_visible, discard_visible=discard_visible, ink_visible=ink_visible))
+    return redirect(url_for('main.home'))
 
 @deck_bp.route('/move_item/<from_list>/<to_list>/<int:index>')
 def move_item(from_list, to_list, index):
