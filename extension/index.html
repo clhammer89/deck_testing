@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Card Management</title>
+    <style>
+      .card-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;  /* Center items horizontally */
+        align-items: center;      /* Center items vertically */
+      }  
+      .card {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between; /* Space between content and buttons */
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        width: 225px;
+        height: 375px;
+        padding: 10px;
+        margin: 10px; /* Adjust margin for spacing between cards */
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+        background-color: #f9f9f9;
+        text-align: center;
+        overflow: hidden; /* Hide overflow text */
+        text-overflow: ellipsis; /* Add ellipsis (...) for overflowing text */
+        white-space: nowrap; /* Prevent text from wrapping to the next line */
+      }
+      .summary-card {
+        display: inline-block;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        width: 115px;
+        height: 20px;
+        padding: 10px;
+        margin: 10px; /* Adjust margin for spacing between cards */
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+        background-color: #f9f9f9;
+        text-align: center;
+        user-select: none; /* Standard for most modern browsers */
+        -webkit-user-select: none; /* Safari */
+        -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* IE10+ */
+      }
+      .card img {
+        max-width: 220px;
+        max-height: 300px;
+        margin-bottom: 10px;
+        margin-top: 20px;
+      }
+      .card button {
+        border: none;
+        background: none;
+        cursor: pointer;
+        font-size: 1.2em;
+        margin: 0 5px;
+      }
+      .card-buttons {
+        margin-top: auto; /* Push the buttons to the bottom */
+        display: flex;
+        justify-content: center;
+        gap: 5px; /* Space between buttons */
+      }
+      .summary-cards {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 20px;
+      }
+      .summary-cards .summary-card {
+        margin: 0 10px;
+      }
+      .tooltip {
+        position: relative;
+        display: inline-block;
+      }
+      .tooltip .tooltiptext {
+        visibility: hidden;
+        width: 120px;
+        background-color: #555;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 5px 0;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%; 
+        left: 50%;
+        margin-left: -60px;
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      .tooltip:hover .tooltiptext {
+        visibility: visible;
+        opacity: 1;
+      }
+    </style>
+    <script src="main.js"></script>
+  </head>
+  <body>
+    <div style="text-align: center; margin-top: 50px;">
+      <div class="summary-cards">
+        <div class="summary-card">Deck: ${deck || 0} cards</div>
+        <div class="summary-card">Hand: {{ hand|length }} cards</div>
+        <div class="summary-card">Board: {{ board|length }} cards</div>
+        <div class="summary-card">Discard: {{ discard|length }} cards</div>
+        <div class="summary-card">Ink: {{ ink|length }} cards</div>
+        <div class="summary-card tooltip" id="loreButton" style="background-color: #d3d3d3; color: black; #ccc;">
+            Lore (0)
+            <span class="tooltiptext">Left click +1, right click -1</span>
+        </div>
+      </div>
+      <h1 {% if deck %}style="display:none;"{% endif %}>Paste your deck (one card per line, use Copy Text output from lorcana.gg)</h1>
+      <div {% if deck %}style="display:none;"{% endif %}>
+        <div>
+          <textarea name="user_input" rows="10" cols="60" required></textarea>
+          <br><br>
+          <label for="fileDropdown">Select a deck:</label>
+          <select id="fileDropdown">
+              <option value="" disabled selected>Select a file</option>
+          </select>
+          <button id="submitButton" type="button" onclick="handleAddToDeck()">Submit</button>
+        </div>
+      </div>
+      <div style="text-align: center; margin-top: 20px;">
+          <textarea id="logTextArea" rows="10" cols="100" readonly></textarea>
+      </div>
+      <div>
+          <button type="button" onclick="resetDeck()">Reset deck</button>
+          <button type="button" onclick="resetAll()">Reset</button>
+          <button type="button" onclick="loadAssets()">Load Assets</button>
+      </div>
+      <br>
+      <button id="deckButton" onclick="toggleListVisibility('deckList', 'deckButton')">Show deck</button>
+      <button id="handButton" onclick="toggleListVisibility('handList', 'handButton')">Show hand</button>
+      <button id="boardButton" onclick="toggleListVisibility('boardList', 'boardButton')">Show board</button>
+      <button id="discardButton" onclick="toggleListVisibility('discardList', 'discardButton')">Show discard</button>
+      <button id="inkButton" onclick="toggleListVisibility('inkList', 'inkButton')">Show ink</button>
+      <br><br>
+      <div style="display: inline-block;">
+        <button id="drawButton" type="button" onclick="drawCard()">Draw</button>
+        <button id="draw7button" type="button" onclick="drawSevenCards()">Draw 7</button>
+        <button id="shuffleDeckButton" onclick="shuffleDeck()">Shuffle Deck</button>
+      </div>
+      <!-- Hand List -->
+      <div id="handList" style="margin-top: 20px;">
+        {% if hand %}
+          <h2>Your Hand ({{ hand|length }})</h2>
+          <div class="card-container">
+            {% for item in hand %}
+              <div class="card">
+                <div>
+                {{ item[0] }}
+                </div>
+                <!img src="{{ url_for('static', filename='card_assets/' + item[2]) }}" alt="{{ item[0] }}" onerror="this.style.display='none'">
+                <div class="card-buttons">
+                  <span class="tooltip">
+                    <button onclick="moveItem('hand', 'deck', {{ loop.index0 }}, { addToTop: true })">&#x2B06;</button>
+                    <span class="tooltiptext">Add to top of deck</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="moveItem('hand', 'deck', {{ loop.index0 }}, { addToBottom: true })">&#x2B07;</button>
+                    <span class="tooltiptext">Add to bottom of deck</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="moveItem('hand', 'board', {{ loop.index0 }})">&#x2B1C;</button>
+                    <span class="tooltiptext">Add to board</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="moveItem('hand', 'discard', {{ loop.index0 }})">&#x274C;</button>
+                    <span class="tooltiptext">Add to discard</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="moveItem('hand', 'ink', {{ loop.index0 }})">&#x1F58B;</button>
+                    <span class="tooltiptext">Add to ink</span>
+                  </span>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Board List -->
+      <div id="boardList" style="margin-top: 20px;">
+        {% if board %}
+          <h2>Your Board ({{ board|length }})</h2>
+          <div class="card-container">
+            {% for item in board %}
+              <div class="card">
+                <div>
+                {{ item[0] }}
+                </div>
+                <!img src="{{ url_for('static', filename='card_assets/' + item[2]) }}" alt="{{ item[0] }}" onerror="this.style.display='none'">
+                <div class="card-buttons">
+                  <span class="tooltip">
+                    <button onclick="moveItem('board', 'deck', {{ loop.index0 }}, { addToTop: true })">&#x2B06;</button>
+                    <span class="tooltiptext">Add to top of deck</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="moveItem('board', 'deck', {{ loop.index0 }}, { addToBottom: true })">&#x2B07;</button>
+                    <span class="tooltiptext">Add to bottom of deck</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="moveItem('board', 'hand', {{ loop.index0 }})">&#x1F91D;</button>
+                    <span class="tooltiptext">Add to hand</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="moveItem('board', 'discard', {{ loop.index0 }})">&#x274C;</button>
+                    <span class="tooltiptext">Add to discard</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="moveItem('board', 'ink', {{ loop.index0 }})">&#x1F58B;</button>
+                    <span class="tooltiptext">Add to ink</span>
+                  </span>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Discard List -->
+      <div id="discardList" style="margin-top: 20px;">
+        {% if discard %}
+          <h2>Your Discard Pile ({{ discard|length }})</h2>
+          <div class="card-container">
+            {% for item in discard %}
+              <div class="card">
+                <div>
+                {{ item[0] }}
+                </div>
+                <!img src="{{ url_for('static', filename='card_assets/' + item[2]) }}" alt="{{ item[0] }}" onerror="this.style.display='none'">
+                <div class="card-buttons">
+                  <span class="tooltip">
+                    <button onclick="moveItem('discard', 'deck', {{ loop.index0 }}, { addToTop: true })">&#x2B06;</button>
+                    <span class="tooltiptext">Add to top of deck</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="moveItem('discard', 'deck', {{ loop.index0 }}, { addToBottom: true })">&#x2B07;</button>
+                    <span class="tooltiptext">Add to bottom of deck</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="moveItem('discard', 'hand', {{ loop.index0 }})">&#x1F91D;</button>
+                    <span class="tooltiptext">Add to hand</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="moveItem('discard', 'board', {{ loop.index0 }})">&#x2B1C;</button>
+                    <span class="tooltiptext">Add to board</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="moveItem('discard', 'ink', {{ loop.index0 }})">&#x1F58B;</button>
+                    <span class="tooltiptext">Add to ink</span>
+                  </span>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Ink List -->
+      <div id="inkList" style="margin-top: 20px;">
+        {% if ink %}
+          <h2>Your Ink ({{ ink|length }})</h2>
+          <div class="card-container">
+            {% for item in ink %}
+              <div class="card">
+                <div>
+                {{ item[0] }}
+                </div>
+                <!img src="{{ url_for('static', filename='card_assets/' + item[2]) }}" alt="{{ item[0] }}" onerror="this.style.display='none'">
+                <div class="card-buttons">
+                  <span class="tooltip">
+                    <button onclick="moveItem('ink', 'deck', {{ loop.index0 }}, { addToTop: true })">&#x2B06;</button>
+                    <span class="tooltiptext">Add to top of deck</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="moveItem('ink', 'deck', {{ loop.index0 }}, { addToBottom: true })">&#x2B07;</button>
+                    <span class="tooltiptext">Add to bottom of deck</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="moveItem('ink', 'hand', {{ loop.index0 }})">&#x1F91D;</button>
+                    <span class="tooltiptext">Add to hand</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="moveItem('ink', 'board', {{ loop.index0 }})">&#x2B1C;</button>
+                    <span class="tooltiptext">Add to board</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="moveItem('ink', 'discard', {{ loop.index0 }})">&#x274C;</button>
+                    <span class="tooltiptext">Add to discard</span>
+                  </span>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+      <!-- Deck List -->
+      <div id="deckList" style="margin-top: 20px;">
+        {% if deck %}
+          <h2>Your Deck ({{ deck|length }})</h2>
+          <div class="card-container">
+            {% for item in deck %}
+              <div class="card">
+                <div>
+                {{ item[0] }}
+                </div>
+                <!img src="{{ url_for('static', filename='card_assets/' + item[2]) }}" alt="{{ item[0] }}" onerror="this.style.display='none'">
+                <div class="card-buttons">
+                  <span class="tooltip">
+                    <button onclick="moveItem('deck', 'hand', {{ loop.index0 }})">&#x1F91D;</button>
+                    <span class="tooltiptext">Add to hand</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="moveItem('deck', 'board', {{ loop.index0 }})">&#x2B1C;</button>
+                    <span class="tooltiptext">Add to board</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="moveItem('deck', 'discard', {{ loop.index0 }})">&#x274C;</button>
+                    <span class="tooltiptext">Add to discard</span>
+                  </span>
+                  <span class="tooltip">
+                    <button onclick="moveItem('deck', 'ink', {{ loop.index0 }})">&#x1F58B;</button>
+                    <span class="tooltiptext">Add to discard</span>
+                  </span>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </body>
+</html>
