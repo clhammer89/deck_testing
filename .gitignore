@@ -1,4 +1,4 @@
 static/card_assets/*
-/routes/__pycache__/*
-click_log.txt
+routes/__pycache__/*
 __pycache__/
+click_log.txt

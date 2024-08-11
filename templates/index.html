@@ -14,7 +14,7 @@
         transition: background-color 0.3s, color 0.3s; /* Smooth transition */
       }
       .dark-mode {
-        background-color: #121212; /* Dark background */
+        background-color: #000000; /* Dark background */
         color: #e0e0e0; /* Light text color */
       }
       .card-container {
@@ -185,9 +185,9 @@
         right: 10px;
         width: 250px;
         height: 250px;
+        border-radius: 50%;
         overflow: hidden;
         cursor: pointer;
-        z-index: 1000;
         transition: transform 0.3s;
       }     
 
@@ -252,6 +252,14 @@
 
         // Lore button click events
         const loreButton = document.getElementById('loreButton');
+
+        // Load initial counter value from the server
+        fetch('/get_lore')
+            .then(response => response.json())
+            .then(data => {
+                loreButton.textContent = `Lore (${data.lore})`;
+            });   
+
         loreButton.addEventListener('click', function() {
           fetch('/increment_lore', { method: 'POST' })
             .then(response => response.json())
@@ -433,20 +441,10 @@
       <button id="inkButton" onclick="toggleListVisibility('inkList', 'inkButton')">Show ink</button>
       <br><br>
       <div style="display: inline-block;">
-        <form method="post" action="/draw_card" onsubmit="updateVisibilityForm()" style="display: inline;">
-          <input type="hidden" name="deck_visible" id="deck_visible" value="true">
-          <input type="hidden" name="hand_visible" id="hand_visible" value="true">
-          <input type="hidden" name="board_visible" id="board_visible" value="true">
-          <input type="hidden" name="discard_visible" id="discard_visible" value="true">
-          <input type="hidden" name="ink_visible" id="ink_visible" value="true">
+        <form method="post" action="/draw_card" style="display: inline;">
           <button id="drawButton" type="submit">Draw</button>
         </form>
-        <form method="post" action="/draw_seven_cards" onsubmit="updateVisibilityForm()" style="display: inline;">
-          <input type="hidden" name="deck_visible" id="deck_visible" value="true">
-          <input type="hidden" name="hand_visible" id="hand_visible" value="true">
-          <input type="hidden" name="board_visible" id="board_visible" value="true">
-          <input type="hidden" name="discard_visible" id="discard_visible" value="true">
-          <input type="hidden" name="ink_visible" id="ink_visible" value="true">
+        <form method="post" action="/draw_seven_cards" style="display: inline;">
           <button id="draw7button" type="submit">Draw 7</button>
         </form>
         <button id="shuffleDeckButton" onclick="shuffleDeck()">Shuffle Deck</button>
@@ -465,23 +463,23 @@
                     <img src="{{ url_for('static', filename='card_assets/' + item[2]) }}" alt="{{ item[0] }}" onerror="this.style.display='none'">
                     <div class="card-buttons-container">
                       <span class="tooltip">
-                        <button onclick="updateVisibilityForm(); location.href='/move_item/hand/deck/{{ loop.index0 }}?add_to_top=true'">&#x2B06;</button>
+                        <button onclick="location.href='/move_item/hand/deck/{{ loop.index0 }}?add_to_top=true'">&#x2B06;</button>
                         <span class="tooltiptext">Add to top of deck</span>
                       </span>
                       <span class="tooltip">
-                        <button onclick="updateVisibilityForm(); location.href='/move_item/hand/deck/{{ loop.index0 }}?add_to_bottom=true'">&#x2B07;</button>
+                        <button onclick="location.href='/move_item/hand/deck/{{ loop.index0 }}?add_to_bottom=true'">&#x2B07;</button>
                         <span class="tooltiptext">Add to bottom of deck</span>
                       </span>
                       <span class="tooltip">
-                        <button onclick="updateVisibilityForm(); location.href='/move_item/hand/board/{{ loop.index0 }}'">&#x2B1C;</button>
+                        <button onclick="location.href='/move_item/hand/board/{{ loop.index0 }}'">&#x2B1C;</button>
                         <span class="tooltiptext">Add to board</span>
                       </span>
                       <span class="tooltip">
-                        <button onclick="updateVisibilityForm(); location.href='/move_item/hand/discard/{{ loop.index0 }}'">&#x274C;</button>
+                        <button onclick="location.href='/move_item/hand/discard/{{ loop.index0 }}'">&#x274C;</button>
                         <span class="tooltiptext">Add to discard</span>
                       </span>
                       <span class="tooltip">
-                        <button onclick="updateVisibilityForm(); location.href='/move_item/hand/ink/{{ loop.index0 }}'">&#x1F58B;</button>
+                        <button onclick="location.href='/move_item/hand/ink/{{ loop.index0 }}'">&#x1F58B;</button>
                         <span class="tooltiptext">Add to ink</span>
                       </span>
                     </div>
@@ -507,23 +505,23 @@
                 <img src="{{ url_for('static', filename='card_assets/' + item[2]) }}" alt="{{ item[0] }}" onerror="this.style.display='none'">
                 <div class="card-buttons-container">
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/board/deck/{{ loop.index0 }}?add_to_top=true'">&#x2B06;</button>
+                    <button onclick="location.href='/move_item/board/deck/{{ loop.index0 }}?add_to_top=true'">&#x2B06;</button>
                     <span class="tooltiptext">Add to top of deck</span>
                   </span>
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/board/deck/{{ loop.index0 }}?add_to_bottom=true'">&#x2B07;</button>
+                    <button onclick="location.href='/move_item/board/deck/{{ loop.index0 }}?add_to_bottom=true'">&#x2B07;</button>
                     <span class="tooltiptext">Add to bottom of deck</span>
                   </span>
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/board/hand/{{ loop.index0 }}'">&#x1F91D;</button>
+                    <button onclick="location.href='/move_item/board/hand/{{ loop.index0 }}'">&#x1F91D;</button>
                     <span class="tooltiptext">Add to hand</span>
                   </span>
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/board/discard/{{ loop.index0 }}'">&#x274C;</button>
+                    <button onclick="location.href='/move_item/board/discard/{{ loop.index0 }}'">&#x274C;</button>
                     <span class="tooltiptext">Add to discard</span>
                   </span>
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/board/ink/{{ loop.index0 }}'">&#x1F58B;</button>
+                    <button onclick="location.href='/move_item/board/ink/{{ loop.index0 }}'">&#x1F58B;</button>
                     <span class="tooltiptext">Add to ink</span>
                   </span>
                 </div>
@@ -548,23 +546,23 @@
                 <img src="{{ url_for('static', filename='card_assets/' + item[2]) }}" alt="{{ item[0] }}" onerror="this.style.display='none'">
                 <div class="card-buttons-container">
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/discard/deck/{{ loop.index0 }}?add_to_top=true'">&#x2B06;</button>
+                    <button onclick="location.href='/move_item/discard/deck/{{ loop.index0 }}?add_to_top=true'">&#x2B06;</button>
                     <span class="tooltiptext">Add to top of deck</span>
                   </span>
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/discard/deck/{{ loop.index0 }}?add_to_bottom=true'">&#x2B07;</button>
+                    <button onclick="location.href='/move_item/discard/deck/{{ loop.index0 }}?add_to_bottom=true'">&#x2B07;</button>
                     <span class="tooltiptext">Add to bottom of deck</span>
                   </span>
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/discard/hand/{{ loop.index0 }}'">&#x1F91D;</button>
+                    <button onclick="location.href='/move_item/discard/hand/{{ loop.index0 }}'">&#x1F91D;</button>
                     <span class="tooltiptext">Add to hand</span>
                   </span>
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/discard/board/{{ loop.index0 }}'">&#x2B1C;</button>
+                    <button onclick="location.href='/move_item/discard/board/{{ loop.index0 }}'">&#x2B1C;</button>
                     <span class="tooltiptext">Add to board</span>
                   </span>
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/discard/ink/{{ loop.index0 }}'">&#x274C;</button>
+                    <button onclick="location.href='/move_item/discard/ink/{{ loop.index0 }}'">&#x274C;</button>
                     <span class="tooltiptext">Add to discard</span>
                   </span>
                 </div>
@@ -589,23 +587,23 @@
                 <img src="{{ url_for('static', filename='card_assets/' + item[2]) }}" alt="{{ item[0] }}" onerror="this.style.display='none'">
                 <div class="card-buttons-container">
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/ink/deck/{{ loop.index0 }}?add_to_top=true'">&#x2B06;</button>
+                    <button onclick="location.href='/move_item/ink/deck/{{ loop.index0 }}?add_to_top=true'">&#x2B06;</button>
                     <span class="tooltiptext">Add to top of deck</span>
                   </span>
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/ink/deck/{{ loop.index0 }}?add_to_bottom=true'">&#x2B07;</button>
+                    <button onclick="location.href='/move_item/ink/deck/{{ loop.index0 }}?add_to_bottom=true'">&#x2B07;</button>
                     <span class="tooltiptext">Add to bottom of deck</span>
                   </span>
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/ink/hand/{{ loop.index0 }}'">&#x1F91D;</button>
+                    <button onclick="location.href='/move_item/ink/hand/{{ loop.index0 }}'">&#x1F91D;</button>
                     <span class="tooltiptext">Add to hand</span>
                   </span>
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/ink/board/{{ loop.index0 }}'">&#x2B1C;</button>
+                    <button onclick="location.href='/move_item/ink/board/{{ loop.index0 }}'">&#x2B1C;</button>
                     <span class="tooltiptext">Add to board</span>
                   </span>
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/ink/discard/{{ loop.index0 }}'">&#x274C;</button>
+                    <button onclick="location.href='/move_item/ink/discard/{{ loop.index0 }}'">&#x274C;</button>
                     <span class="tooltiptext">Add to discard</span>
                   </span>
                 </div>
@@ -629,19 +627,19 @@
                 <img src="{{ url_for('static', filename='card_assets/' + item[2]) }}" alt="{{ item[0] }}" onerror="this.style.display='none'">
                 <div class="card-buttons-container">
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/deck/hand/{{ loop.index0 }}'">&#x1F91D;</button>
+                    <button onclick="location.href='/move_item/deck/hand/{{ loop.index0 }}'">&#x1F91D;</button>
                     <span class="tooltiptext">Add to hand</span>
                   </span>
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/deck/discard/{{ loop.index0 }}'">&#x274C;</button>
+                    <button onclick="location.href='/move_item/deck/discard/{{ loop.index0 }}'">&#x274C;</button>
                     <span class="tooltiptext">Add to discard</span>
                   </span>
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/deck/board/{{ loop.index0 }}'">&#x2B1C;</button>
+                    <button onclick="location.href='/move_item/deck/board/{{ loop.index0 }}'">&#x2B1C;</button>
                     <span class="tooltiptext">Add to board</span>
                   </span>
                   <span class="tooltip">
-                    <button onclick="updateVisibilityForm(); location.href='/move_item/deck/ink/{{ loop.index0 }}'">&#x1F58B;</button>
+                    <button onclick="location.href='/move_item/deck/ink/{{ loop.index0 }}'">&#x1F58B;</button>
                     <span class="tooltiptext">Add to ink</span>
                   </span>
                 </div>
